@@ -29,9 +29,8 @@ def square_gen(t, V, f):
     return plt.gcf()
 
 
-def triangle_gen(t, V, f):
-    triangle = V * signal.sawtooth(2 * np.pi * f * t, 0.5)
-    plt.plot(time, triangle)
+def triangle_gen(t, V, f, tri):
+    plt.plot(time, tri)
     plt.title('Triangle wave')
     plt.xlabel('Time')
     plt.ylabel('Amplitude')
@@ -39,6 +38,16 @@ def triangle_gen(t, V, f):
     plt.grid(True, which='both')
     plt.axhline(y=0, color='k')
     return plt.gcf()
+
+
+def triangle_response(tri, L, R, Km, KT, b, J, I, w, t):
+    for i in range(len(tri)):
+        if i + 1 == len(tri):
+            break
+        else:
+            ts = t[i + 1] - t[i]
+            I.append(I[i] + ts * (tri[i] / L - (R * I[i]) / L - (Km * w[i]) / L))
+            w.append(w[i] + ts * ((KT * I[i]) / J - (b * w[i]) / J))
 
 
 def draw_figure(canvas, figure):
@@ -52,12 +61,16 @@ def draw_figure(canvas, figure):
 max_time = 5
 amplitude = 1
 frequency = 1
+resistance = 4
+inductance = 1
+Moment_inertia = 1
+km = 1
+kT = 1
+damping = 1
+current = [0]
+omega = [0]
 
-
-time = np.linspace(0, max_time, 500000, endpoint=True)
-#voltage_values = np.array(sine_gen(time, amplitude, frequency))
-#plt.plot(time, voltage_values)
-
+time = np.linspace(0, max_time, 100000, endpoint=True)
 
 sg.theme("DarkAmber")
 
@@ -94,28 +107,36 @@ while True:
     if event in (sg.WIN_CLOSED, "Quit"):
         break
     elif event == "Generate square wave" or event == "Generate triangle wave" or event == "Generate sine wave":
-        frequency = float(values["-frequency-"])
-        amplitude = float(values["-amplitude-"])
-        max_time_after = float(values["-time-"])
-        if max_time_after != max_time:
-            time = np.linspace(0, max_time_after, 1000, endpoint=True)
-            max_time = max_time_after
+        try:
+            frequency = float(values["-frequency-"])
+            amplitude = float(values["-amplitude-"])
+            max_time_after = float(values["-time-"])
+            isError = False
+            if max_time_after != max_time:
+                time = np.linspace(0, max_time_after, 100000, endpoint=True)
+                max_time = max_time_after
+        except ValueError:
+            sg.popup("An error has occurred\nValue in the text box is incorrect!\n", title="ERROR", grab_anywhere=True)
+            isError = True
+            # window.refresh()
 
-    if event == "Generate triangle wave":
-        fig_agg.get_tk_widget().forget()
-        plt.close('all')
-        fig_agg = draw_figure(window["-CANVAS-"].TKCanvas, triangle_gen(time, amplitude, frequency))
-        window.refresh()
-    elif event == "Generate square wave":
-        fig_agg.get_tk_widget().forget()
-        plt.close('all')
-        fig_agg = draw_figure(window["-CANVAS-"].TKCanvas, square_gen(time, amplitude, frequency))
-        window.refresh()
-    elif event == "Generate sine wave":
-        fig_agg.get_tk_widget().forget()
-        plt.close('all')
-        fig_agg = draw_figure(window["-CANVAS-"].TKCanvas, sine_gen(time, amplitude, frequency))
-        window.refresh()
+    if not isError:
+        if event == "Generate triangle wave":
+            fig_agg.get_tk_widget().forget()
+            plt.close('all')
+            triangle = amplitude * signal.sawtooth(2 * np.pi * frequency * time, 0.5)
+            fig_agg = draw_figure(window["-CANVAS-"].TKCanvas, triangle_gen(time, amplitude, frequency, triangle))
+            triangle_response(triangle, inductance, resistance, km, kT, damping, Moment_inertia, current, omega, time)
+            window.refresh()
+        elif event == "Generate square wave":
+            fig_agg.get_tk_widget().forget()
+            plt.close('all')
+            fig_agg = draw_figure(window["-CANVAS-"].TKCanvas, square_gen(time, amplitude, frequency))
+            window.refresh()
+        elif event == "Generate sine wave":
+            fig_agg.get_tk_widget().forget()
+            plt.close('all')
+            fig_agg = draw_figure(window["-CANVAS-"].TKCanvas, sine_gen(time, amplitude, frequency))
+            window.refresh()
 
 window.close()
-#test

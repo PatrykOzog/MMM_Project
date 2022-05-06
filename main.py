@@ -73,18 +73,19 @@ first_column = [
     [sg.Text("Constant value kT:", size=(20, 1)), sg.InputText(kT, key="-kT-")],
     [sg.Text("Damping factor:", size=(20, 1)), sg.InputText(damping, key="-damping-")],
     [sg.Text("Number of samples:", size=(20, 1)), sg.InputText(samples, key="-samples-")],
+    [sg.Text("Duration:", size=(20, 1)), sg.InputText(duration, key="-duration-")],
     [sg.Text(" ")],
     [sg.Button("Generate square wave", size=(20, 1))],
     [sg.Button("Generate triangle wave", size=(20, 1))],
     [sg.Button("Generate sine wave", size=(20, 1))],
-    [sg.Button("Generate square wave with", size=(20, 1))],
+    [sg.Button("Generate square wave with finite duration", size=(20, 2))],
     [sg.Text(" ")],
     [sg.Button("Quit")],
 
 ]
 
 second_column = [
-    [sg.Canvas(size=(800, 800), key="-CANVAS-")],
+    [sg.Canvas(size=(1200, 900), key="-CANVAS-")],
 ]
 
 layout = [
@@ -95,14 +96,17 @@ layout = [
     ]
 ]
 
-window = sg.Window("hi", layout, finalize=True, element_justification="center")
-fig_agg = draw_figure(window["-CANVAS-"].TKCanvas, None)
+window = sg.Window("hi", layout, finalize=True, element_justification="center", location=(50, 50))
+is_generated = False
 
 while True:
     event, values = window.read()
+    if event and is_generated == False:
+        fig_agg = draw_figure(window["-CANVAS-"].TKCanvas, None)
+        is_generated = True
     if event in (sg.WIN_CLOSED, "Quit"):
         break
-    elif event == "Generate square wave" or event == "Generate triangle wave" or event == "Generate sine wave" or event == "Generate square wave with":
+    elif event == "Generate square wave" or event == "Generate triangle wave" or event == "Generate sine wave" or event == "Generate square wave with finite duration":
         try:
             frequency = float(values["-frequency-"])
             amplitude = float(values["-amplitude-"])
@@ -114,11 +118,13 @@ while True:
             kT = float(values["-kT-"])
             damping = float(values["-damping-"])
             samples_after = int(values["-samples-"])
+            duration = float(values["-duration-"])
             isError = False
             if max_time_after != max_time or samples_after != samples:
-                time = np.linspace(0, max_time_after, samples, endpoint=True)
                 max_time = max_time_after
                 samples = samples_after
+                time = np.linspace(0, max_time, samples, endpoint=True)
+
         except ValueError:
             sg.popup("An error has occurred\nValue in the text box is incorrect!\n", title="ERROR", grab_anywhere=True)
             isError = True
@@ -145,11 +151,16 @@ while True:
             wave_name = "Sine"
             fig_agg = draw_figure(window["-CANVAS-"].TKCanvas, response(wave_name, sin, inductance, resistance, km, kT, damping, moment_inertia, time))
             window.refresh()
-        elif event == "Generate square wave with":
+        elif event == "Generate square wave with finite duration":
             fig_agg.get_tk_widget().forget()
             plt.close('all')
             square_timed = amplitude + time*0
-            print(square_timed)
+            wave_name = "Square"
+            for i, j in enumerate(time):
+                if j >= duration:
+                    square_timed[i] = 0
+
+            fig_agg = draw_figure(window["-CANVAS-"].TKCanvas, response(wave_name, square_timed, inductance, resistance, km, kT, damping, moment_inertia, time))
             window.refresh()
 
 window.close()

@@ -6,7 +6,7 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 
 def response(name, sig, L, R, Km, KT, b, J, t):
-    figure, axis = plt.subplots(3, figsize=(12, 9))
+    figure, axis = plt.subplots(3, figsize=(14, 11))
     I = [0]
     w = [0]
     for i in range(len(sig)):
@@ -24,14 +24,17 @@ def response(name, sig, L, R, Km, KT, b, J, t):
     axis[0].set_title(f"{name} wave")
     axis[0].set_ylabel("U[V]")
     axis[0].set_xlabel("t[s]")
+    axis[0].grid()
 
     axis[1].set_title("Current")
     axis[1].set_ylabel("I[A]")
     axis[1].set_xlabel("t[s]")
+    axis[1].grid()
 
     axis[2].set_title("Angular velocity")
     axis[2].set_ylabel("w[rad/s]")
     axis[2].set_xlabel("t[s]")
+    axis[2].grid()
 
     plt.subplots_adjust(hspace=0.5)
 
@@ -57,8 +60,9 @@ kT = 1
 damping = 1
 samples = 100000
 duration = 2
+is_generated = False
 
-time = np.linspace(0, max_time, samples, endpoint=True)
+
 
 sg.theme("DarkAmber")
 
@@ -80,12 +84,15 @@ first_column = [
     [sg.Button("Generate sine wave", size=(20, 1))],
     [sg.Button("Generate square wave with finite duration", size=(20, 2))],
     [sg.Text(" ")],
+    [sg.Button("Save data to txt", size=(20, 1)), sg.Button("Save image to jpg", size=(20, 1))],
+    [sg.Button("Load data from txt", size=(20, 1)), sg.InputText(key="--", size=(23, 1))],
+    [sg.Text(" ")],
     [sg.Button("Quit")],
 
 ]
 
 second_column = [
-    [sg.Canvas(size=(1200, 900), key="-CANVAS-")],
+    [sg.Canvas(size=(1400, 1100), key="-CANVAS-")],
 ]
 
 layout = [
@@ -96,14 +103,14 @@ layout = [
     ]
 ]
 
-window = sg.Window("hi", layout, finalize=True, element_justification="center", location=(50, 50))
-is_generated = False
+window = sg.Window("hi", layout, location=(500, 50), size=(500, 650), finalize=True)
 
 while True:
     event, values = window.read()
     if event and is_generated == False:
         fig_agg = draw_figure(window["-CANVAS-"].TKCanvas, None)
         is_generated = True
+        time = np.linspace(0, max_time, samples, endpoint=True)
     if event in (sg.WIN_CLOSED, "Quit"):
         break
     elif event == "Generate square wave" or event == "Generate triangle wave" or event == "Generate sine wave" or event == "Generate square wave with finite duration":
@@ -133,34 +140,44 @@ while True:
         if event == "Generate triangle wave":
             fig_agg.get_tk_widget().forget()
             plt.close('all')
-            triangle = amplitude * signal.sawtooth(2 * np.pi * frequency * time - 1.5*np.pi, 0.5)
+            triangle = amplitude * signal.sawtooth(2 * np.pi * frequency * time - 1.5 * np.pi, 0.5)
             wave_name = "Triangle"
-            fig_agg = draw_figure(window["-CANVAS-"].TKCanvas, response(wave_name, triangle, inductance, resistance, km, kT, damping, moment_inertia, time))
+            fig_agg = draw_figure(window["-CANVAS-"].TKCanvas,
+                                  response(wave_name, triangle, inductance, resistance, km, kT, damping, moment_inertia,
+                                           time))
             window.refresh()
         elif event == "Generate square wave":
             fig_agg.get_tk_widget().forget()
             plt.close('all')
             square = amplitude * signal.square(2 * np.pi * frequency * time)
             wave_name = "Square"
-            fig_agg = draw_figure(window["-CANVAS-"].TKCanvas, response(wave_name, square, inductance, resistance, km, kT, damping, moment_inertia, time))
+            fig_agg = draw_figure(window["-CANVAS-"].TKCanvas,
+                                  response(wave_name, square, inductance, resistance, km, kT, damping, moment_inertia,
+                                           time))
             window.refresh()
         elif event == "Generate sine wave":
             fig_agg.get_tk_widget().forget()
             plt.close('all')
             sin = amplitude * np.sin(2 * np.pi * frequency * time)
             wave_name = "Sine"
-            fig_agg = draw_figure(window["-CANVAS-"].TKCanvas, response(wave_name, sin, inductance, resistance, km, kT, damping, moment_inertia, time))
+            fig_agg = draw_figure(window["-CANVAS-"].TKCanvas,
+                                  response(wave_name, sin, inductance, resistance, km, kT, damping, moment_inertia,
+                                           time))
             window.refresh()
         elif event == "Generate square wave with finite duration":
             fig_agg.get_tk_widget().forget()
             plt.close('all')
-            square_timed = amplitude + time*0
+            square_timed = amplitude + time * 0
             wave_name = "Square"
             for i, j in enumerate(time):
                 if j >= duration:
                     square_timed[i] = 0
 
-            fig_agg = draw_figure(window["-CANVAS-"].TKCanvas, response(wave_name, square_timed, inductance, resistance, km, kT, damping, moment_inertia, time))
+            fig_agg = draw_figure(window["-CANVAS-"].TKCanvas,
+                                  response(wave_name, square_timed, inductance, resistance, km, kT, damping,
+                                           moment_inertia, time))
             window.refresh()
+
+    window.Maximize()
 
 window.close()

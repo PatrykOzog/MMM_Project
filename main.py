@@ -5,6 +5,22 @@ from scipy import signal
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 
+max_time=5.0
+amplitude=1.0
+frequency=1.0
+resistance=4.0
+inductance=1.0
+moment_inertia=1.0
+km=1.0
+kT=1.0
+damping=1.0
+samples=100000
+duration=2.0
+is_generated=False
+isError=True,
+plot_ready_to_save=False
+
+
 def response(name, sig, L, R, Km, KT, b, J, t):
     figure, axis = plt.subplots(3, figsize=(14, 11))
     I = [0]
@@ -48,22 +64,6 @@ def draw_figure(canvas, figure):
     figure_canvas_agg.get_tk_widget().pack(side="top", fill="both", expand=1)
     return figure_canvas_agg
 
-
-max_time = 5
-amplitude = 1
-frequency = 1
-resistance = 4
-inductance = 1
-moment_inertia = 1
-km = 1
-kT = 1
-damping = 1
-samples = 100000
-duration = 2
-is_generated = False
-
-
-
 sg.theme("DarkAmber")
 
 first_column = [
@@ -84,11 +84,11 @@ first_column = [
     [sg.Button("Generate sine wave", size=(20, 1))],
     [sg.Button("Generate square wave with finite duration", size=(20, 2))],
     [sg.Text(" ")],
-    [sg.Button("Save data to txt", size=(20, 1)), sg.Button("Save image to jpg", size=(20, 1))],
-    [sg.Button("Load data from txt", size=(20, 1)), sg.InputText(key="--", size=(23, 1))],
+    [sg.Button("Save data to txt", size=(20, 1)), sg.InputText(key="-datatotxt-", size=(23, 1))],
+    [sg.Button("Save image to png", size=(20, 1)), sg.InputText(key="-imagetopng-", size=(23, 1))],
+    [sg.Button("Load data from txt", size=(20, 1)), sg.InputText(key="-datafromtxt-", size=(23, 1))],
     [sg.Text(" ")],
     [sg.Button("Quit")],
-
 ]
 
 second_column = [
@@ -97,13 +97,13 @@ second_column = [
 
 layout = [
     [
-        sg.Column(first_column),
+        sg.Column(first_column, key="-col-"),
         sg.VSeparator(),
         sg.Column(second_column),
     ]
 ]
 
-window = sg.Window("hi", layout, location=(500, 50), size=(500, 650), finalize=True)
+window = sg.Window("Generator Program", layout, location=(500, 50), size=(500, 650), finalize=True)
 
 while True:
     event, values = window.read()
@@ -113,6 +113,25 @@ while True:
         time = np.linspace(0, max_time, samples, endpoint=True)
     if event in (sg.WIN_CLOSED, "Quit"):
         break
+
+    elif event == "Load data from txt":
+        try:
+            data_from_txt = str(values["-datafromtxt-"])
+            data = np.loadtxt(f"{data_from_txt}.txt", delimiter=' ', dtype=str)
+            window["-frequency-"].update(data[0])
+            window["-amplitude-"].update(data[1])
+            window["-time-"].update(data[2])
+            window["-resistance-"].update(data[3])
+            window["-inductance-"].update(data[4])
+            window["-moment_inertia-"].update(data[5])
+            window["-km-"].update(data[6])
+            window["-kT-"].update(data[7])
+            window["-damping-"].update(data[8])
+            window["-samples-"].update(data[9])
+            window["-duration-"].update(data[10])
+        except FileNotFoundError:
+            sg.popup("An error has occurred\nFile not found!\n", title="ERROR", grab_anywhere=True)
+
     elif event == "Generate square wave" or event == "Generate triangle wave" or event == "Generate sine wave" or event == "Generate square wave with finite duration":
         try:
             frequency = float(values["-frequency-"])
@@ -127,16 +146,30 @@ while True:
             samples_after = int(values["-samples-"])
             duration = float(values["-duration-"])
             isError = False
+            window.Maximize()
             if max_time_after != max_time or samples_after != samples:
                 max_time = max_time_after
                 samples = samples_after
                 time = np.linspace(0, max_time, samples, endpoint=True)
-
         except ValueError:
             sg.popup("An error has occurred\nValue in the text box is incorrect!\n", title="ERROR", grab_anywhere=True)
             isError = True
 
+    elif event == "Save data to txt":
+        data_to_text = str(values["-datatotxt-"])
+        with open(f"{data_to_text}.txt", "w") as f:
+            f.write(
+                f"{frequency}\n{amplitude}\n{max_time}\n{resistance}\n{inductance}\n{moment_inertia}\n{km}\n{kT}\n{damping}\n{samples}\n{duration}")
+
+    elif event == "Save image to png":
+        if plot_ready_to_save:
+            image_to_png = str(values["-imagetopng-"])
+            plt.savefig(f"{image_to_png}.png")
+        else:
+            sg.popup("An error has occurred\nPlease generate the image first!\n", title="ERROR", grab_anywhere=True)
+
     if not isError:
+        plot_ready_to_save = True
         if event == "Generate triangle wave":
             fig_agg.get_tk_widget().forget()
             plt.close('all')
@@ -177,7 +210,5 @@ while True:
                                   response(wave_name, square_timed, inductance, resistance, km, kT, damping,
                                            moment_inertia, time))
             window.refresh()
-
-    window.Maximize()
 
 window.close()

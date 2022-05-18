@@ -5,20 +5,20 @@ from scipy import signal
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 
-max_time=5.0
-amplitude=1.0
-frequency=1.0
-resistance=4.0
-inductance=1.0
-moment_inertia=1.0
-km=1.0
-kT=1.0
-damping=1.0
-samples=100000
-duration=2.0
-is_generated=False
-isError=True,
-plot_ready_to_save=False
+max_time = 5.0
+amplitude = 1.0
+frequency = 1.0
+resistance = 4.0
+inductance = 1.0
+moment_inertia = 1.0
+km = 1.0
+kT = 1.0
+damping = 1.0
+samples = 100000
+duration = 2.0
+is_generated = False
+isError = True
+plot_ready_to_save = False
 
 
 def response(name, sig, L, R, Km, KT, b, J, t):
@@ -64,6 +64,7 @@ def draw_figure(canvas, figure):
     figure_canvas_agg.get_tk_widget().pack(side="top", fill="both", expand=1)
     return figure_canvas_agg
 
+
 sg.theme("DarkAmber")
 
 first_column = [
@@ -107,7 +108,7 @@ window = sg.Window("Generator Program", layout, location=(500, 50), size=(500, 6
 
 while True:
     event, values = window.read()
-    if event and is_generated == False:
+    if event and not is_generated:
         fig_agg = draw_figure(window["-CANVAS-"].TKCanvas, None)
         is_generated = True
         time = np.linspace(0, max_time, samples, endpoint=True)
@@ -146,7 +147,6 @@ while True:
             samples_after = int(values["-samples-"])
             duration = float(values["-duration-"])
             isError = False
-            window.Maximize()
             if max_time_after != max_time or samples_after != samples:
                 max_time = max_time_after
                 samples = samples_after
@@ -178,6 +178,7 @@ while True:
             fig_agg = draw_figure(window["-CANVAS-"].TKCanvas,
                                   response(wave_name, triangle, inductance, resistance, km, kT, damping, moment_inertia,
                                            time))
+            window.Maximize()
             window.refresh()
         elif event == "Generate square wave":
             fig_agg.get_tk_widget().forget()
@@ -187,6 +188,7 @@ while True:
             fig_agg = draw_figure(window["-CANVAS-"].TKCanvas,
                                   response(wave_name, square, inductance, resistance, km, kT, damping, moment_inertia,
                                            time))
+            window.Maximize()
             window.refresh()
         elif event == "Generate sine wave":
             fig_agg.get_tk_widget().forget()
@@ -196,6 +198,7 @@ while True:
             fig_agg = draw_figure(window["-CANVAS-"].TKCanvas,
                                   response(wave_name, sin, inductance, resistance, km, kT, damping, moment_inertia,
                                            time))
+            window.Maximize()
             window.refresh()
         elif event == "Generate square wave with finite duration":
             fig_agg.get_tk_widget().forget()
@@ -209,6 +212,7 @@ while True:
             fig_agg = draw_figure(window["-CANVAS-"].TKCanvas,
                                   response(wave_name, square_timed, inductance, resistance, km, kT, damping,
                                            moment_inertia, time))
+            window.Maximize()
             window.refresh()
 
 window.close()

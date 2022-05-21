@@ -1,3 +1,5 @@
+#Patryk Ożóg 184601 ACiR1 Projekt 2 Metody Modelowania Matematycznego
+
 import numpy as np
 import matplotlib.pyplot as plt
 import PySimpleGUI as sg
